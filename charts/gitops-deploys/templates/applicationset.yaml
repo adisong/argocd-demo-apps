@@ -1,0 +1,50 @@
+{{- range $app := .Values.applications }}
+{{- if $app.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: {{ $app.name }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - list:
+      elements:
+        {{- $.Values.clusters | toYaml | nindent 8 }}
+  {{- if $.Values.progressiveSync.enabled }}
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        {{- $.Values.progressiveSync.steps | toYaml | nindent 8 }}
+  {{- end }}
+  template:
+    metadata:
+      name: '{{ `{{.namespace}}` }}-{{ $app.name }}'
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+      {{- with $.Values.appLabels }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      project: '{{ `{{.project}}` }}'
+      sources:
+        - repoURL: https://github.com/argoproj/argocd-example-apps
+          targetRevision: HEAD
+          path: guestbook
+      syncPolicy:
+        {{- if not $.Values.progressiveSync.enabled }}
+        automated:
+          prune: true
+          selfHeal: true
+        {{- end }}
+        syncOptions:
+          - CreateNamespace=true
+      destination:
+        name: '{{ `{{.cluster}}` }}'
+        namespace: '{{ `{{.namespace}}` }}'
+{{- end }}
+{{- end }}

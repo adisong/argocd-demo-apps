@@ -1,0 +1,39 @@
+# Default values for gitops-deploys.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+appLabels:
+  app.argocd.argoproj.io/env: '{{.project}}'
+
+clusters:
+  - cluster: in-cluster
+    namespace: tenant1
+    project: default
+  - cluster: in-cluster
+    namespace: tenant2
+    project: default
+
+applications:
+  - name: guestbook
+    enabled: true
+
+# Progressive sync is an alpha feature in ArgoCD that allows you to gradually sync applications across multiple clusters or environments.
+# https://argo-cd.readthedocs.io/en/latest/operator-manual/applicationset/Progressive-Syncs/#rollingsync
+# It has to be explicitly enabled in applicationset controller so it is disabled here by default.
+progressiveSync:
+  enabled: false
+  steps:
+    - matchExpressions:
+        - key: app.argocd.argoproj.io/env
+          operator: In
+          values:
+            - dev
+    - matchExpressions:
+        - key: app.argocd.argoproj.io/env
+          operator: In
+          values:
+            - prod
