@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-appsets
+  namespace: argocd
+spec:
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    helm:
+      releaseName: gitops-deploys
+    path: charts/gitops-deploys
+    repoURL: https://github.com/adisong/argocd-demo-apps
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      enabled: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
